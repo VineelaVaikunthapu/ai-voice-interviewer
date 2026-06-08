@@ -1,53 +1,64 @@
+# agent.py
 from dotenv import load_dotenv
-
 from livekit import agents
-from livekit.agents import AgentServer, AgentSession, Agent, inference, room_io, TurnHandlingOptions
-from livekit.plugins import ai_coustics, silero
+from livekit.agents import AgentSession, Agent, RoomInputOptions
+from livekit.plugins import (
+    langchain,   # <-- this is key
+    cartesia,
+    deepgram,
+    noise_cancellation,
+    silero
+)
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
+
+from graph import create_workflow  # <-- our compiled LangGraph app
 
 load_dotenv(".env.local")
 
-
-class Assistant(Agent):
+class InterviewAgent(Agent):
     def __init__(self) -> None:
-        super().__init__(
-            instructions="""You are a helpful voice AI assistant.
-            You eagerly assist users with their questions by providing information from your extensive knowledge.
-            Your responses are concise, to the point, and without any complex formatting or punctuation including emojis, asterisks, or other symbols.
-            You are curious, friendly, and have a sense of humor.""",
-        )
+        super().__init__(instructions=(
+            "You are a professional interviewer conducting a job interview. "
+            "The LangGraph workflow will drive the conversation flow. "
+            "Simply speak the questions and responses as they come from the graph. "
+            "Be conversational, professional, and helpful throughout the interview process."
+        ))
 
-server = AgentServer()
+async def entrypoint(ctx: agents.JobContext):
+    # 1) Build/compile the LangGraph app (Runnable)
+    interview_workflow = create_workflow()
 
-@server.rtc_session(agent_name="my-agent")
-async def my_agent(ctx: agents.JobContext):
+    # 2) Wrap it as an LLM for LiveKit via the LangChain plugin
+    #    (LLMAdapter knows how to drive LangGraph workflows as an LLM stream)
+    lg_llm = langchain.LLMAdapter(graph=interview_workflow)
+
+    # 3) Configure the rest of the realtime pipeline
     session = AgentSession(
-        stt=inference.STT(model="deepgram/nova-3", language="multi"),
-        llm=inference.LLM(model="openai/gpt-5.2-chat-latest"),
-        tts=inference.TTS(
-            model="cartesia/sonic-3",
-            voice="9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
-        ),
+        stt=deepgram.STT(model="nova-3", language="multi"),
+        llm=lg_llm,  # <-- use the adapter here instead of openai.LLM(...)
+        tts=cartesia.TTS(model="sonic-2", voice="f786b574-daa5-4673-aa0c-cbe3e8534c02"),
         vad=silero.VAD.load(),
-        turn_handling=TurnHandlingOptions(
-            turn_detection=MultilingualModel(),
-        ),
+        turn_detection=MultilingualModel(),
     )
+
+    #avatar = bey.AvatarSession(
+     #   avatar_id="694c83e2-8895-4a98-bd16-56332ca3f449",  # ID of the Beyond Presence avatar to use
+    #)
+
+    # Start the avatar and wait for it to join
+   # await avatar.start(session, room=ctx.room)
 
     await session.start(
         room=ctx.room,
-        agent=Assistant(),
-        room_options=room_io.RoomOptions(
-            audio_input=room_io.AudioInputOptions(
-                noise_cancellation=ai_coustics.audio_enhancement(model=ai_coustics.EnhancerModel.QUAIL_VF_S),
-            ),
+        agent=InterviewAgent(),
+        room_input_options=RoomInputOptions(
+            noise_cancellation=noise_cancellation.BVC(),
         ),
     )
 
-    await session.generate_reply(
-        instructions="Greet the user and offer your assistance."
-    )
-
+    # Start the interview workflow - the graph will drive the conversation
+    print("Starting interview workflow...")
+    # The graph will automatically begin with the first question
 
 if __name__ == "__main__":
-    agents.cli.run_app(server)
+    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
