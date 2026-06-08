@@ -1457,6 +1457,9 @@ codecs = [
 deepgram = [
     { name = "livekit-plugins-deepgram" },
 ]
+hedra = [
+    { name = "livekit-plugins-hedra" },
+]
 images = [
     { name = "pillow" },
 ]
@@ -1561,6 +1564,18 @@ wheels = [
 ]
 
 [[package]]
+name = "livekit-plugins-hedra"
+version = "1.5.17"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/07/8e/1d9842496ae5dfb4a6eb0acd689d8537f5aee48b427696b438284c849ed6/livekit_plugins_hedra-1.5.17.tar.gz", hash = "sha256:5a0b2f992535b7801dfb48d549b70398df670ae03463da42b529f20d8819d9cd", size = 3446, upload-time = "2026-06-03T01:37:31.283Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/48/1801c739bfeb405bcde64f237eaf9b3e9e639a315b3bf7562843723c93b5/livekit_plugins_hedra-1.5.17-py3-none-any.whl", hash = "sha256:5e7fab0371d904c2ba3aa132ee698cb7619d7119fb9a04f277ec1a2674f862a8", size = 3528, upload-time = "2026-06-03T01:37:30.237Z" },
+]
+
+[[package]]
 name = "livekit-plugins-langchain"
 version = "1.5.17"
 source = { registry = "https://pypi.org/simple" }
@@ -1658,7 +1673,7 @@ dependencies = [
     { name = "langchain-openai" },
     { name = "langchain-text-splitters" },
     { name = "langgraph" },
-    { name = "livekit-agents", extra = ["cartesia", "deepgram", "openai", "silero", "turn-detector"] },
+    { name = "livekit-agents", extra = ["cartesia", "deepgram", "hedra", "images", "openai", "silero", "turn-detector"] },
     { name = "livekit-plugins-ai-coustics" },
     { name = "livekit-plugins-langchain" },
     { name = "livekit-plugins-noise-cancellation" },
@@ -1676,7 +1691,7 @@ requires-dist = [
     { name = "langchain-openai", specifier = ">=1.2.2" },
     { name = "langchain-text-splitters", specifier = ">=1.1.2" },
     { name = "langgraph", specifier = ">=1.2.4" },
-    { name = "livekit-agents", extras = ["cartesia", "deepgram", "openai", "silero", "turn-detector"], specifier = "~=1.2" },
+    { name = "livekit-agents", extras = ["cartesia", "deepgram", "hedra", "images", "openai", "silero", "turn-detector"], specifier = "~=1.2" },
     { name = "livekit-plugins-ai-coustics", specifier = ">=0.2.15" },
     { name = "livekit-plugins-langchain", specifier = "~=1.1" },
     { name = "livekit-plugins-noise-cancellation", specifier = "~=0.2" },
